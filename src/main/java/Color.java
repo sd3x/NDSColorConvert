@@ -28,6 +28,7 @@ public class Color {
             convertFromHex255(hexString);
     }
 
+
     private void convertFromRGB31(int red, int green, int blue) {
         if (isValid15bit(red) && isValid15bit(green) && isValid15bit(blue)) {
 
@@ -70,13 +71,13 @@ public class Color {
 
         if (isValidHex(hexString, 4)) {
 
-            hexInt31 = LittleEndianToInt(hexString);
+            int hex = LittleEndianToInt(hexString);
 
             double red, green, blue;
 
-            red = (hexInt31 & 31);
-            green = (hexInt31 >> 5) & 31;
-            blue = (hexInt31 >> 10) & 31;
+            red = (hex & 31);
+            green = (hex >> 5) & 31;
+            blue = (hex >> 10) & 31;
 
             rgb255 = new int[]{
                     (int) Math.round(red * 255 / 31),
@@ -96,11 +97,10 @@ public class Color {
 
     private void convertFromHex255(String hexString) {
         if (isValidHex(hexString, 6)) {
-            System.out.println(hexString);
-            for (int i = 0, j = 0; i < hexString.length(); i += 2, j++) {
+
+            for (int i = 0, j = 0; i < hexString.length(); i += 2, j++)
                 rgb255[j] = Integer.parseInt(hexString.substring(i, i + 2), 16);
-                System.out.println(hexString.substring(0, 2));
-            }
+
 
             for (int i = 0; i < rgb255.length; i++)
                 rgb31[i] = (int) Math.round(Double.parseDouble(String.valueOf(rgb255[i])) * 31 / 255);
@@ -117,15 +117,12 @@ public class Color {
             if (byteString.length() == 1)
                 byteString = "0" + byteString;
             hex255String += byteString;
-            System.out.println(byteString);
         }
-
-        System.out.println(hex255String);
 
         hexInt255 = Integer.parseInt(hex255String, 16);
 
         for (int i = 0; i < rgb255.length; i++)
-            hexInt31 += rgb255[i] / 8 * Math.pow(32, i);
+            hexInt31 += (rgb31[i]*255/31) / 8 * Math.pow(32, i);
 
         ByteBuffer bb = ByteBuffer.allocate(4);
         bb.order(ByteOrder.LITTLE_ENDIAN);
