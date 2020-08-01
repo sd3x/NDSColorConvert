@@ -1,13 +1,14 @@
 import javax.swing.*;
-import java.awt.*;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import javax.swing.event.ChangeListener;
+import java.awt.event.ActionListener;
 
 public class ColorConvert {
 
     static boolean sliderLock = false;
+
+    static Color color = new Color("19317b", "24");
+
+    static JFrame window = new JFrame();
 
     static JTextField red255 = new JTextField();
     static JTextField green255 = new JTextField();
@@ -24,19 +25,155 @@ public class ColorConvert {
     static JTextField rgbHex = new JTextField();
     static JTextField ndsHex = new JTextField();
 
-    static JButton color = new JButton();
+    static JButton colorPreview = new JButton();
 
+    static JRadioButton hex255select = new JRadioButton();
+    static JRadioButton rgb255select = new JRadioButton();
+    static JRadioButton hex31select = new JRadioButton();
+    static JRadioButton rgb31select = new JRadioButton();
+
+    static JButton goButton = new JButton("Convert");
 
     public static void main(String[] args) {
+
+        initSwingUI();
+        updateUI();
+
+        ButtonGroup selectGroup = new ButtonGroup();
+        selectGroup.add(hex255select); selectGroup.add(rgb255select); selectGroup.add(hex31select); selectGroup.add(rgb31select);
+
+        ActionListener determineSelectedField = actionEvent -> {
+
+            boolean rgbHexIsEditable = false;
+            boolean two55sAreEditable = false;
+            boolean ndsHexIsEditable = false;
+            boolean thirty1sAreEditable = false;
+
+            if(hex255select.isSelected())
+                rgbHexIsEditable = true;
+            else if (rgb255select.isSelected())
+                two55sAreEditable = true;
+            else if (hex31select.isSelected())
+                ndsHexIsEditable = true;
+            else if (rgb31select.isSelected())
+                thirty1sAreEditable = true;
+
+            rgbHex.setEditable(rgbHexIsEditable);
+
+            red255.setEditable(two55sAreEditable);
+            green255.setEditable(two55sAreEditable);
+            blue255.setEditable(two55sAreEditable);
+
+            ndsHex.setEditable(ndsHexIsEditable);
+
+            red31.setEditable(thirty1sAreEditable);
+            green31.setEditable(thirty1sAreEditable);
+            blue31.setEditable(thirty1sAreEditable);
+
+        };
+
+        hex255select.addActionListener(determineSelectedField);
+        rgb255select.addActionListener(determineSelectedField);
+        hex31select.addActionListener(determineSelectedField);
+        rgb31select.addActionListener(determineSelectedField);
+
+        goButton.addActionListener(actionEvent -> {
+
+            if(hex255select.isSelected())
+                color = new Color(rgbHex.getText(), "24");
+            if(hex31select.isSelected())
+                color = new Color(ndsHex.getText(), "15");
+
+            if(rgb255select.isSelected())
+                color = new Color(Integer.parseInt(red255.getText()),
+                                  Integer.parseInt(green255.getText()),
+                                  Integer.parseInt(blue255.getText()), "24");
+
+            if(rgb31select.isSelected())
+                color = new Color(Integer.parseInt(red31.getText()),
+                        Integer.parseInt(green31.getText()),
+                        Integer.parseInt(blue31.getText()), "15");
+
+            sliderLock = true;
+
+            updateUI();
+            updateSliders();
+
+            sliderLock = false;
+
+        });
+
+        ChangeListener sliderChange = changeEvent -> {
+            int redLevel = redSlider.getValue();
+            int blueLevel = blueSlider.getValue();
+            int greenLevel = greenSlider.getValue();
+
+            if(!sliderLock) {
+                color = new Color(redLevel, greenLevel, blueLevel, "15");
+                updateUI();
+            }
+
+        };
+
+        redSlider.addChangeListener(sliderChange);
+        greenSlider.addChangeListener(sliderChange);
+        blueSlider.addChangeListener(sliderChange);
+    }
+
+    public static void updateUI() {
+        rgbHex.setText(color.getHex255String());
+        ndsHex.setText(color.getHex31String());
+
+        String rgb31[] = color.getRGB31();
+        red31.setText(rgb31[0]);
+        green31.setText(rgb31[1]);
+        blue31.setText(rgb31[2]);
+
+        String rgb255[] = color.getRGB255();
+        red255.setText(rgb255[0]);
+        green255.setText(rgb255[1]);
+        blue255.setText(rgb255[2]);
+
+        updateSliders();
+
+        colorPreview.setBackground(new java.awt.Color(color.getHexInt255()));
+
+    }
+
+    public static void updateSliders() {
+        int redLevel;
+        int greenLevel;
+        int blueLevel;
+
+        if(red31.getText().isEmpty() || red31.getText() == null)
+        { redLevel = 0; red31.setText("0"); }
+        else
+            redLevel = Integer.parseInt(red31.getText());
+
+        if(green31.getText().isEmpty() || green31.getText() == null)
+        { greenLevel = 0; green31.setText("0"); }
+        else
+            greenLevel = Integer.parseInt(green31.getText());
+
+        if(blue31.getText().isEmpty() || blue31.getText() == null)
+        { blueLevel = 0; blue31.setText("0"); }
+        else
+            blueLevel = Integer.parseInt(blue31.getText());
+
+        redSlider.setValue(redLevel);
+        greenSlider.setValue(greenLevel);
+        blueSlider.setValue(blueLevel);
+
+    }
+
+    public static void initSwingUI() {
 
         int windowWidth = 500;
         int windowHeight = 400;
 
-        JFrame window = new JFrame();
         window.setSize(windowWidth,windowHeight);
-        window.setLayout(null);//using no layout managers
+        window.setLayout(null);
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
 
 
         int buttonWidth = windowWidth/5;
@@ -92,146 +229,23 @@ public class ColorConvert {
         green31.setBounds(goX + 60, ndsHexY, two55width, textsHeight);
         blue31.setBounds(goX + 100, ndsHexY, two55width, textsHeight);
 
-
-
-
         int radioDimension = 20;
-
-        JRadioButton hex255 = new JRadioButton();
-        JRadioButton rgb255 = new JRadioButton();
-        JRadioButton hex31 = new JRadioButton();
-        JRadioButton rgb31 = new JRadioButton();
-
-        ButtonGroup bg = new ButtonGroup();
-        bg.add(hex255); bg.add(rgb255); bg.add(hex31); bg.add(rgb31);
-
-        hex255.addActionListener(actionEvent -> {
-            if(hex255.isSelected()) {
-                rgbHex.setEditable(true);
-
-                red255.setEditable(false);
-                green255.setEditable(false);
-                blue255.setEditable(false);
-
-                ndsHex.setEditable(false);
-
-                red31.setEditable(false);
-                green31.setEditable(false);
-                blue31.setEditable(false);
-            }
-        });
-
-        hex31.addActionListener(actionEvent -> {
-            rgbHex.setEditable(false);
-
-            red255.setEditable(false);
-            green255.setEditable(false);
-            blue255.setEditable(false);
-
-            ndsHex.setEditable(true);
-
-            red31.setEditable(false);
-            green31.setEditable(false);
-            blue31.setEditable(false);
-
-        });
-
-        rgb255.addActionListener(actionEvent -> {
-            if(rgb255.isSelected()) {
-                rgbHex.setEditable(false);
-
-                red255.setEditable(true);
-                green255.setEditable(true);
-                blue255.setEditable(true);
-
-                ndsHex.setEditable(false);
-
-                red31.setEditable(false);
-                green31.setEditable(false);
-                blue31.setEditable(false);
-            }
-        });
-
-        rgb31.addActionListener(actionEvent -> {
-            rgbHex.setEditable(false);
-
-            red255.setEditable(false);
-            green255.setEditable(false);
-            blue255.setEditable(false);
-
-            ndsHex.setEditable(false);
-
-            red31.setEditable(true);
-            green31.setEditable(true);
-            blue31.setEditable(true);
-        });
-
-        hex255.setBounds(textsX - 20, rgbLabelY, radioDimension, radioDimension);
-        hex255.setSelected(true);
+        hex255select.setBounds(textsX - 20, rgbLabelY, radioDimension, radioDimension);
+        hex255select.setSelected(true);
         ndsHex.setEditable(false);
         red255.setEditable(false); green255.setEditable(false); blue255.setEditable(false);
         red31.setEditable(false); green31.setEditable(false); blue31.setEditable(false);
-        rgb255.setBounds(goX, rgbLabelY, radioDimension, radioDimension);
-        hex31.setBounds(textsX - 20, ndsLabelY + 10, radioDimension, radioDimension);
-        rgb31.setBounds(goX, ndsLabelY + 10, radioDimension, radioDimension);
+        rgb255select.setBounds(goX, rgbLabelY, radioDimension, radioDimension);
+        hex31select.setBounds(textsX - 20, ndsLabelY + 10, radioDimension, radioDimension);
+        rgb31select.setBounds(goX, ndsLabelY + 10, radioDimension, radioDimension);
 
-        color.setBounds(textsX + 80, ndsLabelY - 120, 100, 100);
-        color.setBackground(Color.white);
-        color.setEnabled(false);
+        colorPreview.setBounds(textsX + 80, ndsLabelY - 120, 100, 100);
+        colorPreview.setBackground(java.awt.Color.white);
+        colorPreview.setEnabled(false);
 
-
-
-
-        JButton goButton = new JButton("Convert");
         goButton.setBounds(goX, goY, buttonWidth, buttonHeight);
-        goButton.addActionListener(actionEvent -> {
-            if(hex255.isSelected())
-                updateFromHex255();
-            if(rgb255.isSelected())
-                updateFrom255();
-            if(rgb31.isSelected())
-                updateFrom31();
-            if(hex31.isSelected())
-                updateFromNdsHex();
 
-            updateColor();
-            updateSliders();
-            sliderLock = false;
-
-        });
-
-        redSlider.addChangeListener(changeEvent -> {
-            int redLevel = redSlider.getValue();
-            red31.setText(String.valueOf(redLevel));
-
-            if(!sliderLock)
-                updateFrom31();
-
-            updateColor();
-        });
-
-        greenSlider.addChangeListener(changeEvent -> {
-            int greenLevel = greenSlider.getValue();
-            green31.setText(String.valueOf(greenLevel));
-
-            if(!sliderLock)
-                updateFrom31();
-
-            updateColor();
-        });
-
-        blueSlider.addChangeListener(changeEvent -> {
-            int blueLevel = blueSlider.getValue();
-            blue31.setText(String.valueOf(blueLevel));
-            if(!sliderLock)
-                updateFrom31();
-
-            sliderLock = false;
-            updateColor();
-        });
-
-
-        window.add(color);
+        window.add(colorPreview);
         window.add(goButton);
         window.add(rgbHex);
         window.add(ndsHex);
@@ -243,223 +257,11 @@ public class ColorConvert {
         window.add(red31); window.add(green31); window.add(blue31);
         window.add(redSlider); window.add(greenSlider); window.add(blueSlider);
 
-        window.add(hex255); window.add(rgb255);
-        window.add(hex31); window.add(rgb31);
+        window.add(hex255select); window.add(rgb255select);
+        window.add(hex31select); window.add(rgb31select);
 
-        updateSliders();
-        updateFrom31();
-        updateColor();
-
-        window.setVisible(true);//making the frame visible
-    }
-
-    public static void update255(String hexString) {
-        if(isValidHex(hexString)) {
-            //System.out.println("valid hex");
-            int[] two55s = hexTo255(hexString);
-            red255.setText(String.valueOf(two55s[0]));
-            green255.setText(String.valueOf(two55s[1]));
-            blue255.setText(String.valueOf(two55s[2]));
-        }
-    }
-
-    public static boolean isValidHex(String hexString) {
-        // Regex to check valid hexadecimal color code.
-        String regex = "^([A-Fa-f0-9]{6})$";
-        Pattern p = Pattern.compile(regex);
-
-        if (hexString == null)
-            return false;
-
-        Matcher m = p.matcher(hexString);
-        return m.matches();
-    }
-
-    public static boolean isValid24bit(String color) {
-
-        if(color == null || color.isEmpty())
-            return false;
-        int colorInt = Integer.parseInt(color);
-        return colorInt >= 0 && colorInt <= 255;
-    }
-
-    public static boolean isValid15bit(String color) {
-
-        if(color == null || color.isEmpty())
-            return false;
-        int colorInt = Integer.parseInt(color);
-        return colorInt >= 0 && colorInt <= 31;
-    }
-
-    public static int[] hexTo255(String hexString) {
-        int[] two55s = new int[3];
-        for(int i = 0, j = 0; i < hexString.length(); i+=2, j++)
-            two55s[j] = Integer.parseInt(hexString.substring(i, i+2), 16);
-        return two55s;
-    }
-
-    public static void update31(int[] colors) {
-        red31.setText(String.valueOf(colors[0]));
-        green31.setText(String.valueOf(colors[1]));
-        blue31.setText(String.valueOf(colors[2]));
-    }
-
-    public static int[] two55to31() {
-        if(isValid24bit(red255.getText()) && isValid24bit(green255.getText()) && isValid24bit(blue255.getText())) {
-            return new int[]{(int) Math.round(Double.parseDouble(red255.getText()) * 31/255), (int) Math.round(Double.parseDouble(green255.getText()) * 31/255),
-                    (int) Math.round(Double.parseDouble(blue255.getText()) * 31/255)};
-        }
-        return null;
-    }
-
-    public static int[] thirty1to255() {
-        if(isValid15bit(red31.getText()) && isValid24bit(green31.getText()) && isValid24bit(blue31.getText())) {
-            return new int[]{(int) Math.round(Double.parseDouble(red31.getText()) * 255/31), (int) Math.round(Double.parseDouble(green31.getText()) * 255/31),
-                    (int) Math.round(Double.parseDouble(blue31.getText()) * 255/31)};
-        }
-        return null;
-    }
-
-    public static void update255Hex(String red, String green, String blue) {
-
-        //System.out.println("writing to hex255");
-
-        if(isValid24bit(red) && isValid24bit(green) && isValid24bit(blue)) {
-            red = Integer.toHexString(Integer.parseInt(red));
-            green = Integer.toHexString(Integer.parseInt(green));
-            blue = Integer.toHexString(Integer.parseInt(blue));
-
-            if(red.length() == 1)
-                red = "0" + red;
-            if(green.length() == 1)
-                green = "0" + green;
-            if(blue.length() == 1)
-                blue = "0" + blue;
-
-            String numberAsString = red + green + blue;
-
-            rgbHex.setText(numberAsString);
-        }
-    }
-
-    public static void updateNdsHex(String hex255String) {
-        if(isValidHex(hex255String)) {
-
-            int[] hex255bytes = hexTo255(hex255String);
-
-            int color = (hex255bytes[2]/8*1024 + hex255bytes[1]/8*32 + hex255bytes[0]/8);
-
-            // System.out.println(color);
-
-            ByteBuffer bb = ByteBuffer.allocate(4);
-            bb.order(ByteOrder.LITTLE_ENDIAN);
-            bb.putInt(color);
-
-            byte[] ba = bb.array();
-
-            ndsHex.setText(toHexString(ba).substring(0, 4));
-
-        }
-    }
-
-    public static String toHexString(byte[] bytes) {
-        char[] hexArray = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
-        char[] hexChars = new char[bytes.length * 2];
-        int v;
-        for ( int j = 0; j < bytes.length; j++ ) {
-            v = bytes[j] & 0xFF;
-            hexChars[j*2] = hexArray[v/16];
-            hexChars[j*2 + 1] = hexArray[v%16];
-        }
-        return new String(hexChars);
-    }
-
-    public static int LEtoInt(final String hex) {
-        int ret = 0;
-        String hexLittleEndian = "";
-        if (hex.length() % 2 != 0)
-            return ret;
-        for (int i = hex.length() - 2; i >= 0; i -= 2) {
-            hexLittleEndian += hex.substring(i, i + 2);
-        }
-        return Integer.parseInt(hexLittleEndian, 16);
-    }
-
-    public static int[] ndsHexTo255(String LEHex) {
-
-        int color31 = LEtoInt(LEHex);
-
-        double red, green, blue;
-
-        red = (color31 & 31);
-        green = (color31 >> 5) & 31;
-        blue = (color31 >> 10) & 31;
-
-        return new int[]{(int) Math.round(red * 255 / 31),(int) Math.round(green * 255/31), (int) Math.round(blue * 255/31)};
+        window.setVisible(true);
 
     }
 
-    public static void updateFromHex255() {
-        sliderLock = true;
-        update255(rgbHex.getText());
-        update31(two55to31());
-        updateNdsHex(rgbHex.getText());
-    }
-
-    public static void updateFrom255() {
-        sliderLock = true;
-        update255Hex(red255.getText(), green255.getText(), blue255.getText());
-        update31(two55to31());
-        updateNdsHex(rgbHex.getText());
-    }
-
-    public static void updateFrom31() {
-        System.out.println("updating from 31");
-        int[] colors = thirty1to255();
-        update255Hex(String.valueOf(colors[0]), String.valueOf(colors[1]), String.valueOf(colors[2]));
-        update255(rgbHex.getText());
-        updateNdsHex(rgbHex.getText());
-    }
-
-    public static void updateFromNdsHex() {
-        int[] colors255 = ndsHexTo255(ndsHex.getText());
-        update255Hex(String.valueOf(colors255[0]), String.valueOf(colors255[1]), String.valueOf(colors255[2]));
-        update255(rgbHex.getText());
-        update31(two55to31());
-    }
-
-    public static void updateColor() {
-        if(isValidHex(rgbHex.getText())) {
-            //System.out.println("valid hex");
-            int[] two55s = thirty1to255();
-            Color c = new Color(two55s[0], two55s[1], two55s[2]);
-            color.setBackground(c);
-        }
-    }
-
-    public static void updateSliders() {
-        int redLevel;
-        int greenLevel;
-        int blueLevel;
-
-        if(red31.getText().isEmpty() || red31.getText() == null)
-        { redLevel = 0; red31.setText("0"); }
-        else
-            redLevel = Integer.parseInt(red31.getText());
-
-        if(green31.getText().isEmpty() || green31.getText() == null)
-        { greenLevel = 0; green31.setText("0"); }
-        else
-            greenLevel = Integer.parseInt(green31.getText());
-
-        if(blue31.getText().isEmpty() || blue31.getText() == null)
-        { blueLevel = 0; blue31.setText("0"); }
-        else
-            blueLevel = Integer.parseInt(blue31.getText());
-
-        redSlider.setValue(redLevel);
-        greenSlider.setValue(greenLevel);
-        blueSlider.setValue(blueLevel);
-
-    }
 }
